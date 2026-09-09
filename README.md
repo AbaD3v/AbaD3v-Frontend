@@ -5,4 +5,4 @@
 - [Ersultan K](https://github.com/ersultankargul07-alt)
 - [Ayadil](https://github.com/mukasevaadil2-cmd)
 - [Rasul](https://github.com/vancitygarfield)
-- [Beibarys M](https://github.com/Terbarys)ы
+- [Beibarys M](https://github.com/Terbarys)

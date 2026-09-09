@@ -2,7 +2,7 @@
 
 Участники:
 - [Abzal M](https://github.com/AbaD3v)
-- [Ersultan K](https://github.com/ersultankargul07-alt)
+- [Ersultan ](https://github.com/ersultankargul07-alt)
 - [Ayadil](https://github.com/mukasevaadil2-cmd)
 - [Rasul](https://github.com/vancitygarfield)
 - [Beibarys M](https://github.com/Terbarys)

@@ -34,7 +34,15 @@ def transcribe(audio_path: str, language: str = "ru") -> str:
     if not audio_path:
         return ""
     language = language if language in {"ru", "en", "kk"} else "ru"
-    segments, _ = whisper_model().transcribe(audio_path, language=language, vad_filter=True)
+    # Short push-to-talk recordings can be mistaken for silence by VAD.
+    # Let Whisper inspect the complete clip so short answers are not dropped.
+    segments, _ = whisper_model().transcribe(
+        audio_path,
+        language=language,
+        vad_filter=False,
+        condition_on_previous_text=False,
+        beam_size=5,
+    )
     return " ".join(segment.text.strip() for segment in segments).strip()
 
 

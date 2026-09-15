@@ -30,6 +30,10 @@ LANGUAGE_NAMES = {"en": "English", "ru": "Russian", "kk": "Kazakh"}
 STT_LANGUAGE_CODES = {"en": "eng", "ru": "rus", "kk": "kaz"}
 
 
+def hf_voice_api_url() -> str:
+    return os.getenv("HF_VOICE_API_URL", "").strip().rstrip("/")
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -102,6 +106,21 @@ async def process_audio_with_gemini(payload: bytes, mime_type: str, scenario: st
 
 
 async def transcribe_with_elevenlabs(payload: bytes, mime_type: str, language: str | None) -> str:
+    voice_api_url = hf_voice_api_url()
+    if voice_api_url:
+        async with httpx.AsyncClient(timeout=180) as client:
+            response = await client.post(
+                f"{voice_api_url}/transcribe",
+                files={"audio": ("recording.webm", payload, mime_type)},
+                data={"language": language or "ru"},
+            )
+        if response.status_code >= 400:
+            raise HTTPException(502, f"Hugging Face STT error: {response.text[:300]}")
+        transcript = str(response.json().get("text", "")).strip()
+        if not transcript:
+            raise HTTPException(502, "Hugging Face returned no transcript")
+        return transcript
+
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key:
         raise HTTPException(500, "ELEVENLABS_API_KEY is not configured")
@@ -309,6 +328,18 @@ If the transcript has no meaningful grammar error, correction must be null."""
 
 
 async def synthesize(text: str, voice_id: str | None) -> tuple[str | None, str | None]:
+    voice_api_url = hf_voice_api_url()
+    if voice_api_url:
+        async with httpx.AsyncClient(timeout=180) as client:
+            response = await client.post(
+                f"{voice_api_url}/synthesize",
+                data={"text": text, "language": os.getenv("HF_TTS_LANGUAGE", "ru")},
+            )
+        if response.status_code >= 400:
+            print(f"Hugging Face TTS error ({response.status_code}): {response.text[:300]}")
+            return None, None
+        return base64.b64encode(response.content).decode("ascii"), "audio/wav"
+
     api_key = os.getenv("ELEVENLABS_API_KEY")
     voice_id = voice_id or os.getenv("ELEVENLABS_VOICE_ID")
     if not api_key or not voice_id:

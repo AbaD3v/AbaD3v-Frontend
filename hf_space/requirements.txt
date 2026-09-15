@@ -1,4 +1,4 @@
-gradio
+gradio==5.49.1
 spaces
 faster-whisper
 soundfile

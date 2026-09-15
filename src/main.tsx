@@ -4,7 +4,7 @@ import { ArrowUpRight, Check, ChevronDown, CircleHelp, Headphones, MessageCircle
 import './styles.css';
 
 type Correction = { original: string; suggestion: string; explanation: string };
-type Message = { role: 'ai' | 'you'; text: string; time: string; correction?: Correction | null };
+type Message = { role: 'ai' | 'you'; text: string; time: string; correction?: Correction | null; audioBase64?: string | null; audioContentType?: string | null };
 type Voice = { voice_id: string; name: string; category?: string };
 type InputDevice = { deviceId: string; label: string };
 type Chat = { id: string; title: string; createdAt: number; messages: Message[]; language: Language; scenario: number; phase: Phase; kind: 'planner' | 'practice'; sourceId?: string; started: boolean };
@@ -109,19 +109,31 @@ function App() {
   const recordingStartedAt = useRef(0);
   const hadVoiceSignal = useRef(false);
   const recordingRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlayback = (text: string) => {
-    if (!('speechSynthesis' in window)) {
-      setStatus('Озвучивание недоступно в этом браузере');
-      return;
-    }
+  const togglePlayback = (message: Message) => {
     if (playing) {
-      window.speechSynthesis.cancel();
+      audioRef.current?.pause();
+      audioRef.current = null;
+      window.speechSynthesis?.cancel();
       setPlaying(false);
       return;
     }
+    if (message.audioBase64) {
+      const audio = new Audio(`data:${message.audioContentType || 'audio/wav'};base64,${message.audioBase64}`);
+      audio.onended = () => { audioRef.current = null; setPlaying(false); };
+      audio.onerror = () => { audioRef.current = null; setPlaying(false); setStatus('Не удалось воспроизвести голос'); };
+      audioRef.current = audio;
+      void audio.play().catch(() => { audioRef.current = null; setPlaying(false); });
+      setPlaying(true);
+      return;
+    }
+    if (!('speechSynthesis' in window)) {
+      setStatus('Озвучивание недоступно');
+      return;
+    }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(message.text);
     utterance.lang = language === 'ru' ? 'ru-RU' : language === 'kk' ? 'kk-KZ' : 'en-US';
     utterance.rate = 0.95;
     utterance.onend = () => setPlaying(false);
@@ -165,7 +177,7 @@ function App() {
       const response = await fetch(`${API_URL}/api/session/start`, { method: 'POST', body: form });
       if (!response.ok) throw new Error('start failed');
       const result = await response.json();
-      setMessages([{ role: 'ai', text: result.reply, time: currentTime() }]);
+      setMessages([{ role: 'ai', text: result.reply, time: currentTime(), audioBase64: result.audio_base64, audioContentType: result.audio_content_type }]);
       playAudio(result);
     } catch {
       setMessages([{ role: 'ai', text: 'Привет! Расскажи, что хочешь потренировать сегодня.', time: currentTime() }]);
@@ -247,7 +259,7 @@ function App() {
       const response = await fetch(`${API_URL}/api/session/open`, { method: 'POST', body: form });
       if (!response.ok) throw new Error('open failed');
       const result = await response.json();
-      setMessages([{ role: 'ai', text: result.reply, time: currentTime() }]);
+      setMessages([{ role: 'ai', text: result.reply, time: currentTime(), audioBase64: result.audio_base64, audioContentType: result.audio_content_type }]);
       playAudio(result);
     } catch {
       setMessages([{ role: 'ai', text: 'Отлично, начинаем. Расскажи немного о себе и своём опыте.', time: currentTime() }]);
@@ -274,7 +286,7 @@ function App() {
       setChats((prev) => prev.map((chat) => chat.id === sourceId ? { ...chat, messages: [...chat.messages, { role: 'ai', text: `Разбор практики «${room.title}»\n\n${result.reply}`, time: currentTime() }] } : chat));
       setActiveChatId(sourceId);
       const source = chats.find((chat) => chat.id === sourceId);
-      if (source) { setPhase(source.phase); setLanguage(source.language); setScenario(source.scenario); setMessages([...source.messages, { role: 'ai', text: `Разбор практики «${room.title}»\n\n${result.reply}`, time: currentTime() }]); }
+      if (source) { setPhase(source.phase); setLanguage(source.language); setScenario(source.scenario); setMessages([...source.messages, { role: 'ai', text: `Разбор практики «${room.title}»\n\n${result.reply}`, time: currentTime(), audioBase64: result.audio_base64, audioContentType: result.audio_content_type }]); }
       setStatus('Разбор готов');
       playAudio(result);
     } catch {
@@ -360,7 +372,7 @@ function App() {
           setPendingRoom(room);
         }
       }
-      setMessages((prev) => [...prev, { role: 'you', text: result.transcript, time: currentTime(), correction: result.correction }, { role: 'ai', text: result.reply, time: currentTime() }]);
+      setMessages((prev) => [...prev, { role: 'you', text: result.transcript, time: currentTime(), correction: result.correction }, { role: 'ai', text: result.reply, time: currentTime(), audioBase64: result.audio_base64, audioContentType: result.audio_content_type }]);
       setStatus('Твоя очередь — зажми кнопку');
       playAudio(result);
     } catch (error) {
@@ -437,7 +449,7 @@ function App() {
           </div>
           <div className="divider" />
           <div className="conversation">
-            {messages.map((message, index) => <div className={`message-row ${message.role}`} key={`${message.time}-${index}`}><div className="message-avatar">{message.role === 'ai' ? <Sparkles size={15} /> : 'AS'}</div><div className="message-body"><div className="message-meta"><strong>{message.role === 'ai' ? 'Voxa' : 'Ты'}</strong><span>{message.time}</span>{message.role === 'ai' && <span className="ai-pill">AI</span>}</div><div className="bubble">{message.text}{message.correction && <span className="error-dot" />}</div>{message.correction && <button className="feedback"><span>Грамматика</span> “{message.correction.original}” → “{message.correction.suggestion}” <ArrowUpRight size={13} /></button>}{message.role === 'ai' && index === messages.length - 1 && <button className="listen" onClick={() => togglePlayback(message.text)}>{playing ? <Pause size={14} /> : <Play size={14} />} {playing ? 'Остановить' : 'Слушать ответ'} <span>{playing ? '•••' : '0:08'}</span></button>}</div></div>)}
+            {messages.map((message, index) => <div className={`message-row ${message.role}`} key={`${message.time}-${index}`}><div className="message-avatar">{message.role === 'ai' ? <Sparkles size={15} /> : 'AS'}</div><div className="message-body"><div className="message-meta"><strong>{message.role === 'ai' ? 'Voxa' : 'Ты'}</strong><span>{message.time}</span>{message.role === 'ai' && <span className="ai-pill">AI</span>}</div><div className="bubble">{message.text}{message.correction && <span className="error-dot" />}</div>{message.correction && <button className="feedback"><span>Грамматика</span> “{message.correction.original}” → “{message.correction.suggestion}” <ArrowUpRight size={13} /></button>}{message.role === 'ai' && index === messages.length - 1 && <button className="listen" onClick={() => togglePlayback(message)}>{playing ? <Pause size={14} /> : <Play size={14} />} {playing ? 'Остановить' : 'Слушать ответ'} <span>{playing ? '•••' : '0:08'}</span></button>}</div></div>)}
           </div>
           <div className="divider" />
             {pendingRoom && pendingRoom.sourceId === activeChatId && <div className="room-invite"><div><strong>Комната готова: {pendingRoom.title}</strong><small>Я собрала настройки. Перенесёмся туда и начнём отдельную практику?</small></div><button onClick={() => void openPracticeRoom(pendingRoom)}>Перейти в комнату</button></div>}

@@ -33,6 +33,27 @@ def silero_model(language: str):
     return torch.hub.load("snakers4/silero-models", "silero_tts", language="ru", speaker="v5_ru", trust_repo=True)[0]
 
 
+def clean_transcript(text: str) -> str:
+    words = text.split()
+    if len(words) < 8:
+        return text
+    normalized = [word.lower().strip(".,!?;:()[]{}\"'") for word in words]
+    longest_run = 1
+    current_run = 1
+    for index in range(1, len(normalized)):
+        if normalized[index] == normalized[index - 1]:
+            current_run += 1
+            longest_run = max(longest_run, current_run)
+        else:
+            current_run = 1
+    if longest_run >= 5:
+        return ""
+    compact = "".join(normalized).replace("-", "")
+    if len(compact) > 12 and len(set(normalized)) <= 3:
+        return ""
+    return text
+
+
 def transcribe(audio_path: str, language: str = "ru") -> str:
     if not audio_path:
         return ""
@@ -49,6 +70,9 @@ def transcribe(audio_path: str, language: str = "ru") -> str:
             samples = np.clip(samples * min(0.95 / peak, 2.5), -1.0, 1.0)
         if sample_rate != 16000:
             samples = resample_poly(samples, 16000, sample_rate).astype(np.float32)
+        rms = float(np.sqrt(np.mean(np.square(samples)))) if len(samples) else 0.0
+        if rms < 0.003:
+            return ""
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as output:
             sf.write(output.name, samples, 16000, subtype="PCM_16")
             temporary_path = output.name
@@ -60,13 +84,17 @@ def transcribe(audio_path: str, language: str = "ru") -> str:
     segments, _ = whisper_model().transcribe(
         prepared_path,
         language=language,
-        vad_filter=False,
+        vad_filter=True,
+        vad_parameters={"min_silence_duration_ms": 180, "speech_pad_ms": 220},
         condition_on_previous_text=False,
         beam_size=5,
         temperature=0,
-        no_speech_threshold=0.25,
+        no_speech_threshold=0.55,
+        log_prob_threshold=-1.0,
+        compression_ratio_threshold=2.2,
+        repetition_penalty=1.1,
     )
-    text = " ".join(segment.text.strip() for segment in segments).strip()
+    text = clean_transcript(" ".join(segment.text.strip() for segment in segments).strip())
     if temporary_path:
         try:
             os.unlink(temporary_path)

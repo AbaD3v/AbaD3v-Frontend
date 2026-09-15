@@ -1,7 +1,7 @@
 ---
 title: Voxa Voice Engine
 emoji: 🎙️
-colorFrom: orange
+colorFrom: pink
 colorTo: pink
 sdk: gradio
 sdk_version: 5.49.1

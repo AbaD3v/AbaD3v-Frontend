@@ -355,7 +355,6 @@ function App() {
       form.append('language', language);
       form.append('voice_id', voiceId);
       form.append('mode', phase);
-      if (clientTranscriptRef.current.trim()) form.append('transcript_override', clientTranscriptRef.current.trim());
       form.append('history', JSON.stringify(messages.map((message) => ({ role: message.role, text: message.text }))));
       const response = await fetch(`${API_URL}/api/session/turn`, { method: 'POST', body: form });
       if (!response.ok) {

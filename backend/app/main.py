@@ -1,6 +1,5 @@
 import base64
 import asyncio
-import audioop
 import io
 import json
 import os
@@ -88,8 +87,10 @@ def wav_diagnostics(payload: bytes) -> str:
         with wave.open(io.BytesIO(payload), "rb") as audio:
             frames = audio.readframes(audio.getnframes())
             duration = audio.getnframes() / audio.getframerate()
-            rms = audioop.rms(frames, audio.getsampwidth())
-            return f"WAV diagnostics: {duration:.2f}s, {audio.getframerate()}Hz, RMS={rms}"
+            # `audioop` was removed from Python 3.13+. Diagnostics are not
+            # part of the transcription path, so keep this portable and do
+            # not make the whole API depend on that deprecated stdlib module.
+            return f"WAV diagnostics: {duration:.2f}s, {audio.getframerate()}Hz"
     except (wave.Error, EOFError):
         return "Audio diagnostics unavailable (not a valid WAV file)"
 

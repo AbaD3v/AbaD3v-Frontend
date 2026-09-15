@@ -107,7 +107,10 @@ def synthesize(text: str, language: str = "ru"):
     language = language if language in {"ru", "en"} else "ru"
     model = silero_model(language)
     speaker = "xenia" if language == "ru" else "lj"
-    audio = model.apply_tts(text=text[:1200], speaker=speaker, sample_rate=48000)
+    # Silero's FastPitch positional encoding breaks above ~1000 characters.
+    # Keep a safe limit for long practice reports and preserve a complete prefix.
+    safe_text = text.strip()[:850]
+    audio = model.apply_tts(text=safe_text, speaker=speaker, sample_rate=48000)
     output = "/tmp/voxa-response.wav"
     sf.write(output, audio.detach().cpu().numpy(), 48000, format="WAV", subtype="PCM_16")
     return output

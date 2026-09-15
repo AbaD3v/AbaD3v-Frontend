@@ -1,0 +1,29 @@
+name: Sync voice engine to Hugging Face
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "hf_space/**"
+      - ".github/workflows/sync-hf-space.yml"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Push Space files to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          test -n "$HF_TOKEN"
+          cd hf_space
+          git init
+          git config user.name "Voxa deploy bot"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "sync voice engine" || true
+          git push --force "https://AbaD3v:${HF_TOKEN}@huggingface.co/spaces/AbaD3v/voxa-voice-engine" HEAD:main

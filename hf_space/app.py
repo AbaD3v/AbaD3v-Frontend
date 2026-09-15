@@ -16,8 +16,8 @@ def whisper_model() -> WhisperModel:
 @lru_cache(maxsize=2)
 def silero_model(language: str):
     if language == "en":
-        return torch.hub.load("snakers4/silero-models", "silero_tts", language="en", speaker="lj_16khz")[0]
-    return torch.hub.load("snakers4/silero-models", "silero_tts", language="ru", speaker="v5_ru")[0]
+        return torch.hub.load("snakers4/silero-models", "silero_tts", language="en", speaker="lj_16khz", trust_repo=True)[0]
+    return torch.hub.load("snakers4/silero-models", "silero_tts", language="ru", speaker="v5_ru", trust_repo=True)[0]
 
 
 @spaces.GPU(duration=60)

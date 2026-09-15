@@ -53,4 +53,4 @@ with gr.Blocks(title="Voxa Voice Engine") as demo:
     gr.Button("Synthesize").click(synthesize, [text, language], output_audio, api_name="synthesize")
 
 
-demo.launch()
+demo.launch(ssr_mode=False)

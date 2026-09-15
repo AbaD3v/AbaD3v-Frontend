@@ -92,7 +92,7 @@ function App() {
   const [playing, setPlaying] = useState(false);
   const [showScenarioMenu, setShowScenarioMenu] = useState(false);
   const [voices, setVoices] = useState<Voice[]>([]);
-  const [voiceId, setVoiceId] = useState('EXAVITQu4vr4xnSDxMaL');
+  const [voiceId, setVoiceId] = useState('');
   const [inputDevices, setInputDevices] = useState<InputDevice[]>([]);
   const [inputDeviceId, setInputDeviceId] = useState('');
   const [status, setStatus] = useState('Готово к началу');
@@ -135,7 +135,11 @@ function App() {
   useEffect(() => () => { audioProcessor.current?.disconnect(); audioSource.current?.disconnect(); audioStream.current?.getTracks().forEach((track) => track.stop()); void audioContext.current?.close(); }, []);
   useEffect(() => {
     if (!API_URL) return;
-    fetch(`${API_URL}/api/voices`).then((response) => response.json()).then((data) => setVoices(data.voices ?? [])).catch(() => setVoices([]));
+    fetch(`${API_URL}/api/voices`).then((response) => response.json()).then((data) => {
+      const availableVoices = data.voices ?? [];
+      setVoices(availableVoices);
+      setVoiceId((current) => availableVoices.some((voice: Voice) => voice.voice_id === current) ? current : (availableVoices[0]?.voice_id ?? ''));
+    }).catch(() => setVoices([]));
   }, []);
   const loadInputDevices = async () => {
     const devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'audioinput').map((device) => ({ deviceId: device.deviceId, label: device.label || 'Microphone' }));

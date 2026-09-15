@@ -4,8 +4,9 @@ from functools import lru_cache
 import gradio as gr
 import soundfile as sf
 import torch
-import spaces
 from faster_whisper import WhisperModel
+
+torch.set_num_threads(2)
 
 
 @lru_cache(maxsize=1)
@@ -22,7 +23,6 @@ def silero_model(language: str):
     return torch.hub.load("snakers4/silero-models", "silero_tts", language="ru", speaker="v5_ru", trust_repo=True)[0]
 
 
-@spaces.GPU(duration=60)
 def transcribe(audio_path: str, language: str = "ru") -> str:
     if not audio_path:
         return ""
@@ -31,7 +31,6 @@ def transcribe(audio_path: str, language: str = "ru") -> str:
     return " ".join(segment.text.strip() for segment in segments).strip()
 
 
-@spaces.GPU(duration=60)
 def synthesize(text: str, language: str = "ru"):
     language = language if language in {"ru", "en"} else "ru"
     model = silero_model(language)

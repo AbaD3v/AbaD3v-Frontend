@@ -19,7 +19,10 @@ load_dotenv()
 app = FastAPI(title="Voxa API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # The frontend is deployed separately (Vercel), so its origin is not
+    # known during local development. The API does not use cookies or
+    # credentials, therefore a public CORS policy is safe for this MVP.
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

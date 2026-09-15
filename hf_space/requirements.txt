@@ -3,3 +3,4 @@ spaces
 faster-whisper
 soundfile
 numpy
+omegaconf

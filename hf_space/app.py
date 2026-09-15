@@ -10,7 +10,9 @@ from faster_whisper import WhisperModel
 
 @lru_cache(maxsize=1)
 def whisper_model() -> WhisperModel:
-    return WhisperModel(os.getenv("WHISPER_MODEL", "base"), device="cuda", compute_type="float16")
+    # CTranslate2's CUDA runtime is not guaranteed in ZeroGPU containers.
+    # CPU int8 is slower but works reliably without libcublas.so.12.
+    return WhisperModel(os.getenv("WHISPER_MODEL", "base"), device="cpu", compute_type="int8")
 
 
 @lru_cache(maxsize=2)

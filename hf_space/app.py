@@ -1,62 +1,55 @@
-import io
 import os
-import wave
 from functools import lru_cache
 
-import numpy as np
+import gradio as gr
 import soundfile as sf
 import torch
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import Response
+import spaces
 from faster_whisper import WhisperModel
-
-app = FastAPI(title="Voxa Voice Engine")
 
 
 @lru_cache(maxsize=1)
-def get_whisper() -> WhisperModel:
-    model_name = os.getenv("WHISPER_MODEL", "base")
-    return WhisperModel(model_name, device="cpu", compute_type="int8")
+def whisper_model() -> WhisperModel:
+    return WhisperModel(os.getenv("WHISPER_MODEL", "base"), device="cuda", compute_type="float16")
 
 
-@lru_cache(maxsize=4)
-def get_silero(language: str):
-    language = language if language in {"ru", "en"} else "ru"
-    model, _ = torch.hub.load(
-        repo_or_dir="snakers4/silero-models",
-        model="silero_tts",
-        language=language,
-        speaker="v5_ru" if language == "ru" else "lj_16khz",
-    )
-    return model
+@lru_cache(maxsize=2)
+def silero_model(language: str):
+    if language == "en":
+        return torch.hub.load("snakers4/silero-models", "silero_tts", language="en", speaker="lj_16khz")[0]
+    return torch.hub.load("snakers4/silero-models", "silero_tts", language="ru", speaker="v5_ru")[0]
 
 
-@app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.post("/transcribe")
-async def transcribe(audio: UploadFile = File(...), language: str = Form("ru")) -> dict[str, str]:
-    payload = await audio.read()
-    if not payload:
-        raise HTTPException(400, "Audio file is empty")
+@spaces.GPU(duration=60)
+def transcribe(audio_path: str, language: str = "ru") -> str:
+    if not audio_path:
+        return ""
     language = language if language in {"ru", "en", "kk"} else "ru"
-    segments, _ = get_whisper().transcribe(io.BytesIO(payload), language=language, vad_filter=True)
-    text = " ".join(segment.text.strip() for segment in segments).strip()
-    if not text:
-        raise HTTPException(422, "No speech detected")
-    return {"text": text}
+    segments, _ = whisper_model().transcribe(audio_path, language=language, vad_filter=True)
+    return " ".join(segment.text.strip() for segment in segments).strip()
 
 
-@app.post("/synthesize")
-async def synthesize(text: str = Form(...), language: str = Form("ru")) -> Response:
-    if not text.strip():
-        raise HTTPException(400, "Text is empty")
+@spaces.GPU(duration=60)
+def synthesize(text: str, language: str = "ru"):
     language = language if language in {"ru", "en"} else "ru"
-    model = get_silero(language)
+    model = silero_model(language)
     speaker = "xenia" if language == "ru" else "lj"
     audio = model.apply_tts(text=text[:1200], speaker=speaker, sample_rate=48000)
-    buffer = io.BytesIO()
-    sf.write(buffer, audio.detach().cpu().numpy(), 48000, format="WAV", subtype="PCM_16")
-    return Response(content=buffer.getvalue(), media_type="audio/wav")
+    output = "/tmp/voxa-response.wav"
+    sf.write(output, audio.detach().cpu().numpy(), 48000, format="WAV", subtype="PCM_16")
+    return output
+
+
+with gr.Blocks(title="Voxa Voice Engine") as demo:
+    gr.Markdown("# Voxa Voice Engine\nFree Whisper STT and Silero TTS for Voxa.")
+    with gr.Row():
+        audio = gr.Audio(type="filepath", label="Audio")
+        language = gr.Dropdown(["ru", "en", "kk"], value="ru", label="Language")
+    transcript = gr.Textbox(label="Transcript")
+    gr.Button("Transcribe").click(transcribe, [audio, language], transcript, api_name="transcribe")
+    text = gr.Textbox(label="Text to speak")
+    output_audio = gr.Audio(label="Speech")
+    gr.Button("Synthesize").click(synthesize, [text, language], output_audio, api_name="synthesize")
+
+
+demo.launch()

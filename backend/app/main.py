@@ -3,6 +3,8 @@ import asyncio
 import io
 import json
 import os
+import tempfile
+from functools import lru_cache
 from typing import Any
 import wave
 
@@ -10,6 +12,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from gradio_client import Client, handle_file
 
 load_dotenv()
 
@@ -32,6 +35,43 @@ STT_LANGUAGE_CODES = {"en": "eng", "ru": "rus", "kk": "kaz"}
 
 def hf_voice_api_url() -> str:
     return os.getenv("HF_VOICE_API_URL", "").strip().rstrip("/")
+
+
+@lru_cache(maxsize=2)
+def hf_client(space_url: str) -> Client:
+    return Client(space_url)
+
+
+async def hf_transcribe(space_url: str, payload: bytes, mime_type: str, language: str) -> str:
+    suffix = ".webm" if "webm" in mime_type else ".wav"
+    temporary_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temporary_file:
+            temporary_file.write(payload)
+            temporary_path = temporary_file.name
+        result = await asyncio.to_thread(
+            lambda: hf_client(space_url).predict(
+                handle_file(temporary_path), language or "ru", api_name="/transcribe"
+            )
+        )
+        return str(result or "").strip()
+    finally:
+        if temporary_path:
+            try:
+                os.unlink(temporary_path)
+            except OSError:
+                pass
+
+
+async def hf_synthesize(space_url: str, text: str, language: str) -> bytes:
+    result = await asyncio.to_thread(
+        lambda: hf_client(space_url).predict(text, language, api_name="/synthesize")
+    )
+    output_path = result.get("path") if isinstance(result, dict) else str(result)
+    if not output_path or not os.path.exists(output_path):
+        raise RuntimeError("Hugging Face returned no audio file")
+    with open(output_path, "rb") as audio_file:
+        return audio_file.read()
 
 
 @app.get("/health")
@@ -108,15 +148,10 @@ async def process_audio_with_gemini(payload: bytes, mime_type: str, scenario: st
 async def transcribe_with_elevenlabs(payload: bytes, mime_type: str, language: str | None) -> str:
     voice_api_url = hf_voice_api_url()
     if voice_api_url:
-        async with httpx.AsyncClient(timeout=180) as client:
-            response = await client.post(
-                f"{voice_api_url}/transcribe",
-                files={"audio": ("recording.webm", payload, mime_type)},
-                data={"language": language or "ru"},
-            )
-        if response.status_code >= 400:
-            raise HTTPException(502, f"Hugging Face STT error: {response.text[:300]}")
-        transcript = str(response.json().get("text", "")).strip()
+        try:
+            transcript = await hf_transcribe(voice_api_url, payload, mime_type, language or "ru")
+        except Exception as error:
+            raise HTTPException(502, f"Hugging Face STT error: {error}") from error
         if not transcript:
             raise HTTPException(502, "Hugging Face returned no transcript")
         return transcript
@@ -330,15 +365,12 @@ If the transcript has no meaningful grammar error, correction must be null."""
 async def synthesize(text: str, voice_id: str | None) -> tuple[str | None, str | None]:
     voice_api_url = hf_voice_api_url()
     if voice_api_url:
-        async with httpx.AsyncClient(timeout=180) as client:
-            response = await client.post(
-                f"{voice_api_url}/synthesize",
-                data={"text": text, "language": os.getenv("HF_TTS_LANGUAGE", "ru")},
-            )
-        if response.status_code >= 400:
-            print(f"Hugging Face TTS error ({response.status_code}): {response.text[:300]}")
+        try:
+            audio_bytes = await hf_synthesize(voice_api_url, text, os.getenv("HF_TTS_LANGUAGE", "ru"))
+        except Exception as error:
+            print(f"Hugging Face TTS error: {error}")
             return None, None
-        return base64.b64encode(response.content).decode("ascii"), "audio/wav"
+        return base64.b64encode(audio_bytes).decode("ascii"), "audio/wav"
 
     api_key = os.getenv("ELEVENLABS_API_KEY")
     voice_id = voice_id or os.getenv("ELEVENLABS_VOICE_ID")

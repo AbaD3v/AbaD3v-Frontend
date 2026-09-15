@@ -1,9 +1,14 @@
 ---
 title: Voxa Voice Engine
-sdk: docker
-app_port: 7860
+emoji: 🎙️
+colorFrom: orange
+colorTo: pink
+sdk: gradio
+sdk_version: 5.49.1
+app_file: app.py
+pinned: false
 ---
 
 # Voxa Voice Engine
 
-Private API for free local speech recognition and Russian speech synthesis.
+Free Whisper speech recognition and Silero speech synthesis for Voxa.

@@ -4,9 +4,16 @@ from functools import lru_cache
 import gradio as gr
 import soundfile as sf
 import torch
+import spaces
 from faster_whisper import WhisperModel
 
 torch.set_num_threads(2)
+
+
+@spaces.GPU(duration=1)
+def zero_gpu_marker() -> str:
+    """Keep ZeroGPU Spaces happy while inference remains CPU-based."""
+    return "ready"
 
 
 @lru_cache(maxsize=1)

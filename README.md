@@ -48,6 +48,26 @@ Backend использует FastAPI и связывает frontend с язык�
 
 ## Архитектура
 
+### Данные участников команды
+
+У каждого участника есть отдельный файл с его публичной информацией:
+
+```text
+src/team/
+├── types.ts             # общий контракт TeamMember
+├── index.ts              # единый список и порядок отображения
+└── members/
+    ├── abzal-m.ts
+    ├── ersultan-k.ts
+    ├── ayadil-m.ts
+    ├── rasul-k.ts
+    └── beibarys-m.ts
+```
+
+Чтобы обновить свою карточку, участник меняет только свой файл в `src/team/members/`.
+Поля `name`, `role`, `initials`, `github`, `avatar` и `lead` используются на странице команды.
+Порядок карточек меняется в `src/team/index.ts`.
+
 ```text
 Vercel
   └── React/Vite frontend

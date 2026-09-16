@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowUpRight, Check, ChevronDown, CircleHelp, Headphones, MessageCircle, Mic, Pause, Play, RotateCcw, Settings2, Sparkles, Trash2, Users, Volume2, X } from 'lucide-react';
 import './styles.css';
+import { team } from './team';
 
 type Correction = { original: string; suggestion: string; explanation: string };
 type Message = { role: 'ai' | 'you'; text: string; time: string; correction?: Correction | null; audioBase64?: string | null; audioContentType?: string | null };
@@ -27,13 +28,6 @@ const scenarios = [
 ];
 const presets: Array<{ name: string; description: string; scenario: number; language: Language; continuous: boolean }> = [];
 
-const team = [
-  { name: 'Abzal M', role: 'Основатель · Lead developer', initials: 'AM', github: 'https://github.com/AbaD3v', avatar: 'https://github.com/AbaD3v.png?size=160', lead: true },
-  { name: 'Ersultan K', role: 'Участник команды', initials: 'EK', github: 'https://github.com/ersultankargul07-alt', avatar: 'https://github.com/ersultankargul07-alt.png?size=160', lead: false },
-  { name: 'Ayadil M', role: 'Участник команды', initials: 'AM', github: 'https://github.com/mukasevaadil2-cmd', avatar: 'https://github.com/mukasevaadil2-cmd.png?size=160', lead: false },
-  { name: 'Rasul K', role: 'Участник команды', initials: 'RK', github: 'https://github.com/vancitygarfield', avatar: 'https://github.com/vancitygarfield.png?size=160', lead: false },
-  { name: 'Beibarys M', role: 'Участник команды', initials: 'BM', github: 'https://github.com/Terbarys', avatar: 'https://github.com/Terbarys.png?size=160', lead: false },
-];
 const teamStats = [
   { value: '05', label: 'участников' },
   { value: '03', label: 'языка' },

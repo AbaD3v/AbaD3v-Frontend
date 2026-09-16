@@ -2,7 +2,7 @@ import type { TeamMember } from '../types';
 
 const rasulK: TeamMember = {
   id: 'rasul-k',
-  name: 'Rasul K',
+  name: 'Rasul Kenkhan',
   role: 'Член команды',
   initials: 'RK',
   github: 'https://github.com/vancitygarfield',

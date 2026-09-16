@@ -416,7 +416,7 @@ function App() {
         <div className="sidebar-bottom">
           <button className="nav-item" onClick={() => setShowHelp(true)}><CircleHelp size={17} /> Помощь</button>
           <button className="nav-item" onClick={() => setShowSettings(true)}><Settings2 size={17} /> Настройки</button>
-          <div className="profile"><div className="avatar">AS</div><div><strong>Alex Smith</strong><small>Бесплатный план</small></div><ChevronDown size={15} /></div>
+          <div className="profile"><div className="avatar">AS</div><div><strong>Түгенше түгеншеұлы</strong><small>Бесплатный план</small></div><ChevronDown size={15} /></div>
         </div>
       </aside>
 

@@ -1,0 +1,44 @@
+/* Светлая тема */
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: white;
+    color: #222;
+}
+
+/* Тёмная тема */
+body.dark {
+    background-color: #202020;
+    color: white;
+    color-scheme: dark;
+}
+
+input {
+    width: 60px;
+    padding: 8px;
+}
+
+button {
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+table {
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+td {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #888;
+    text-align: center;
+    cursor: pointer;
+}
+
+/* Выбранная ячейка */
+td.colored {
+    background-color: #ffd54f;
+    color: #222;
+}

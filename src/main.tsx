@@ -75,7 +75,7 @@ function App() {
   const [chats, setChats] = useState<Chat[]>([{ id: 'chat-1', title: 'Новый чат', createdAt: Date.now(), messages: [], language: 'ru', scenario: 0, phase: 'setup', kind: 'planner', started: false }]);
   const [activeChatId, setActiveChatId] = useState('chat-1');
   const [pendingRoom, setPendingRoom] = useState<Chat | null>(null);
-  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);//showFinishDialog = 
   const [showHelp, setShowHelp] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [openSettingSelect, setOpenSettingSelect] = useState<string | null>(null);

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица и тёмная тема</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Создание таблицы</h1>
+
+    <label>
+        Строки:
+        <input type="number" id="rows" min="1" value="3">
+    </label>
+
+    <label>
+        Столбцы:
+        <input type="number" id="columns" min="1" value="3">
+    </label>
+
+    <button id="createButton">Создать таблицу</button>
+    <button id="themeButton">Переключить тему</button>
+
+    <p>Нажимай на ячейки, чтобы изменить их цвет.</p>
+
+    <table id="table"></table>
+
+    <p>Жёлтых ячеек: <span id="counter">0</span></p>
+
+    <script src="script.js"></script>
+</body>
+</html>

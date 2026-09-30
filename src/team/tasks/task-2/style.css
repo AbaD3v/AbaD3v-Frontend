@@ -1,0 +1,9 @@
+#task2 .box {
+    border: 1px solid gray;
+    padding: 15px;
+}
+
+#task2 .active {
+    background-color: yellow;
+    font-weight: bold;
+}

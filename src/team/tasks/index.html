@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript — 4 тапсырма</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="task-1/style.css">
+    <link rel="stylesheet" href="task-2/style.css">
+    <link rel="stylesheet" href="task-3/style.css">
+    <link rel="stylesheet" href="task-4/style.css">
+</head>
+<body>
+    <h1>JavaScript тапсырмалары</h1>
+
+    <nav class="tabs" role="tablist" aria-label="Тапсырмалар">
+        <button type="button" id="tab1" class="tab-button selected" role="tab"
+                aria-selected="true" aria-controls="task1" data-target="task1">1-тапсырма</button>
+        <button type="button" id="tab2" class="tab-button" role="tab"
+                aria-selected="false" aria-controls="task2" data-target="task2" tabindex="-1">2-тапсырма</button>
+        <button type="button" id="tab3" class="tab-button" role="tab"
+                aria-selected="false" aria-controls="task3" data-target="task3" tabindex="-1">3-тапсырма</button>
+        <button type="button" id="tab4" class="tab-button" role="tab"
+                aria-selected="false" aria-controls="task4" data-target="task4" tabindex="-1">4-тапсырма</button>
+    </nav>
+
+    <main>
+        <section id="task1" class="task-panel" role="tabpanel" aria-labelledby="tab1">
+            <h2>1-тапсырма. Элементтермен жұмыс</h2>
+            <div id="task1Content">
+                <h3 id="title">Бастапқы мәтін</h3>
+                <div class="old-element">Мен ескі элементпін</div>
+                <button type="button" id="textToggleButton" aria-pressed="false">Мәтінді ауыстыру</button>
+            </div>
+        </section>
+
+        <section id="task2" class="task-panel" role="tabpanel" aria-labelledby="tab2" hidden>
+            <h2>2-тапсырма. Кластарды басқару</h2>
+            <div id="classElement" class="box">Менің кластарымды өзгертіңіз</div>
+            <p id="classesOutput"></p>
+            <button type="button" id="toggleButton">Active класын ауыстыру</button>
+        </section>
+
+        <section id="task3" class="task-panel" role="tabpanel" aria-labelledby="tab3" hidden>
+            <h2>3-тапсырма. Кесте құру</h2>
+            <label>
+                Жолдар:
+                <input type="number" id="rows" min="1" step="1" value="3">
+            </label>
+            <label>
+                Бағандар:
+                <input type="number" id="columns" min="1" step="1" value="3">
+            </label>
+            <button type="button" id="createButton">Кесте құру</button>
+            <p>Ұяшықты бассаңыз, оның түсі өзгереді.</p>
+            <table id="table"></table>
+            <p>Сары ұяшықтар саны: <span id="counter">0</span></p>
+        </section>
+
+        <section id="task4" class="task-panel" role="tabpanel" aria-labelledby="tab4" hidden>
+            <h2>4-тапсырма. Смена темы жасау</h2>
+            <p>Кнопканы басқанда бүкіл беттің түс режимі ауысады.</p>
+            <button type="button" id="themeButton">Теманы ауыстыру</button>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+
+    <script src="task-2/script.js"></script>
+    <script src="task-3/script.js"></script>
+    <script src="task-4/script.js"></script>
+    <script src="task-1/script.js"></script>
+</body>
+</html>

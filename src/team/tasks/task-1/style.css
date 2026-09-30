@@ -1,0 +1,33 @@
+#task1 .new-div {
+    background-color: lightblue;
+    padding: 10px;
+}
+
+#task1 .interactive-paragraph {
+    width: fit-content;
+    cursor: pointer;
+    transition: color 180ms ease, font-size 180ms ease;
+}
+
+#task1 .interactive-paragraph:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+}
+
+#task1 .interactive-paragraph.is-emphasized {
+    color: #c0392b;
+    font-size: 1.5em;
+}
+
+#task1 .old-element {
+    width: fit-content;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+
+#task1 .old-element:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+}
+

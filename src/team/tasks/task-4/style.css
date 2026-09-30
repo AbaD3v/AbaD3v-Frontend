@@ -1,0 +1,17 @@
+/* Тёмная тема включается классом dark у body */
+body.dark {
+    background-color: #202020;
+    color: white;
+    color-scheme: dark;
+}
+
+/* Цвет области задания в тёмной теме */
+body.dark .task-panel {
+    background-color: #292929;
+    border-color: #777;
+}
+
+body.dark .tab-button.selected {
+    background-color: #eee;
+    color: #222;
+}

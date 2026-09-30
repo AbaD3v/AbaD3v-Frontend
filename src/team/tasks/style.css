@@ -1,0 +1,42 @@
+/* Оформление общей страницы */
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f5f5f5;
+    color: #222;
+    color-scheme: light;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+    font: inherit;
+}
+
+/* Кнопки четырёх вкладок */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tab-button.selected {
+    background-color: #222;
+    color: white;
+}
+
+/* Область выбранного задания */
+.task-panel {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #bbb;
+    background-color: white;
+}
+
+.task-panel[hidden] {
+    display: none;
+}
+
+h2 {
+    margin-top: 0;
+}

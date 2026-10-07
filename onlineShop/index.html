@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NOVA — онлайн-магазин</title>
+    <meta name="description" content="Учебный онлайн-магазин: каталог, поиск товаров и корзина.">
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232c45e7'/%3E%3Cpath d='M8 24V8l16 16V8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <a class="brand" href="./">
+            NOVA<span>store</span>
+        </a>
+        <span class="header-note">Вещи для каждого дня</span>
+        <button id="cart-open" class="primary">
+            Корзина <span id="cart-count">0</span>
+        </button>
+    </header>
+
+    <main>
+        <section class="heading" aria-labelledby="catalog-title">
+            <div>
+                <p class="eyebrow">КАТАЛОГ / 2026</p>
+                <h1 id="catalog-title">Найдите своё.</h1>
+                <p class="subtitle">
+                    Техника, красота и всё для дома — в одном месте.
+                </p>
+            </div>
+
+            <div class="stamp">
+                Учебный магазин<br>
+                <strong>Без реальных покупок</strong>
+            </div>
+        </section>
+
+        <section class="toolbar" aria-label="Фильтры каталога">
+            <label class="search">
+                Поиск
+                <input id="search" type="search" placeholder="Название товара, например phone">
+            </label>
+
+            <label>
+                Категория
+                <select id="category">
+                    <option value="">Все категории</option>
+                </select>
+            </label>
+
+            <label>
+                Сортировка
+                <select id="sort">
+                    <option value="default">По умолчанию</option>
+                    <option value="low">Сначала дешевле</option>
+                    <option value="high">Сначала дороже</option>
+                    <option value="rating">По рейтингу</option>
+                </select>
+            </label>
+        </section>
+
+        <div class="results">
+            <h2>Все товары</h2>
+            <span id="result-count" aria-live="polite">Загрузка…</span>
+        </div>
+
+        <p id="status" role="status">Загружаем товары…</p>
+        <button id="retry" hidden>Повторить загрузку</button>
+
+        <section id="products" class="grid" aria-label="Товары"></section>
+    </main>
+
+    <footer>
+        <strong>NOVA store</strong>
+        <span>Учебный проект · Frontend and Backend</span>
+        <span>Цены в USD · Данные DummyJSON</span>
+    </footer>
+
+    <dialog id="details">
+        <button class="close" data-close="details" aria-label="Закрыть описание">
+            ×
+        </button>
+        <div id="detail-content"></div>
+    </dialog>
+
+    <dialog id="cart">
+        <div class="dialog-head">
+            <h2>Ваша корзина</h2>
+            <button class="close" data-close="cart" aria-label="Закрыть корзину">
+                ×
+            </button>
+        </div>
+        <div id="cart-items"></div>
+
+        <div class="total">
+            <span>Итого</span>
+            <strong id="cart-total">$0.00</strong>
+        </div>
+
+        <button id="checkout" class="primary wide">
+            Оформить учебный заказ
+        </button>
+        <p class="muted">Оплата и доставка не выполняются.</p>
+        <p id="order-message" role="status"></p>
+    </dialog>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+</body>
+
+</html>

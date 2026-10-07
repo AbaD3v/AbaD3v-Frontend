@@ -12,12 +12,14 @@ body {
 }
 button,
 input,
+textarea,
 select {
   font: inherit;
 }
 button,
 a,
 input,
+textarea,
 select {
   touch-action: manipulation;
 }
@@ -43,6 +45,7 @@ a {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
   outline: 3px solid #8194ff;
   outline-offset: 3px;
@@ -71,6 +74,20 @@ header {
 .header-note {
   font-size: 14px;
   color: #697386;
+}
+.header-actions,
+.with-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.header-actions {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+[data-icon] {
+  display: inline-flex;
 }
 .primary {
   background: #2c45e7;
@@ -149,6 +166,7 @@ h2 {
   flex: 2;
 }
 input,
+textarea,
 select {
   min-width: 0;
   width: 100%;
@@ -177,6 +195,7 @@ select {
   gap: 20px;
 }
 .card {
+  position: relative;
   background: white;
   border: 1px solid #e2e5ee;
   border-radius: 14px;
@@ -186,6 +205,30 @@ select {
   transition:
     transform 0.18s,
     box-shadow 0.18s;
+}
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 1;
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #2c45e7;
+  box-shadow: 0 2px 8px #18203312;
+}
+.delete-button {
+  color: #b83248;
+}
+.delete-button:hover {
+  background: #fff0f2;
+  border-color: #efbdc6;
 }
 .card:hover {
   transform: translateY(-3px);
@@ -210,7 +253,9 @@ select {
 .badge {
   position: absolute;
   left: 12px;
-  top: 12px;
+  bottom: 12px;
+  max-width: calc(100% - 24px);
+  overflow-wrap: anywhere;
   background: white;
   padding: 6px 8px;
   border-radius: 6px;
@@ -231,6 +276,7 @@ select {
   text-transform: uppercase;
 }
 .title-button {
+  overflow-wrap: anywhere;
   padding: 0;
   border: 0;
   text-align: left;
@@ -305,6 +351,68 @@ dialog::backdrop {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 16px;
+}
+.dialog-head .close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.product-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+.product-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.full-field {
+  grid-column: 1 / -1;
+}
+.optional {
+  color: #697386;
+  font-size: 12px;
+  font-weight: 400;
+}
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 8px;
+}
+.form-error {
+  color: #a12238;
+  background: #fff0f2;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 0;
+  line-height: 1.5;
+}
+.danger {
+  background: #b83248;
+  border-color: #b83248;
+  color: white;
+  font-weight: 600;
+}
+.danger:hover {
+  background: #98263a;
+}
+#delete-product-name,
+.description {
+  overflow-wrap: anywhere;
 }
 .detail-img {
   width: 100%;
@@ -438,5 +546,36 @@ dialog::backdrop {
   }
   .brand {
     font-size: 26px;
+  }
+}
+@media (max-width: 540px) {
+  header {
+    height: auto;
+    min-height: 76px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .header-actions > button {
+    padding: 10px;
+    font-size: 14px;
+  }
+  .grid,
+  .product-form {
+    grid-template-columns: 1fr;
+  }
+  .image-button,
+  .image-button img {
+    height: 220px;
+  }
+  .card-body {
+    padding: 18px;
+  }
+  dialog {
+    padding: 20px;
   }
 }

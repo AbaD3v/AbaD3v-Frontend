@@ -1,11 +1,14 @@
 
 const title = document.getElementById("title");
+title.addEventListener("click", function () {
+
+    showingGreeting = !showingGreeting;
+    title.textContent = showingGreeting ? greeting : originalTitle;
+    textToggleButton.setAttribute("aria-pressed", String(showingGreeting));
+});
 title.textContent = "Сәлем, әлем!";
 
 const newDiv = document.createElement("div");
-newDiv.classList.add("new-div");
-newDiv.textContent = "Мен жаңа элементпін";
-
 
 document.body.appendChild(newDiv);
 
@@ -45,9 +48,8 @@ const greeting = "Сәлем, әлем!";
 let showingGreeting = true;
 
 textToggleButton.addEventListener("click", function () {
-    showingGreeting = !showingGreeting;
-    title.textContent = showingGreeting ? greeting : originalTitle;
-    textToggleButton.setAttribute("aria-pressed", String(showingGreeting));
+    newDiv.classList.add("new-div");
+    newDiv.textContent = "Мен жаңа элементпін";
 });
 
 paragraph.addEventListener("click", toggleParagraphStyle);

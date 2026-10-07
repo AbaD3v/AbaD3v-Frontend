@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>NOVA — онлайн-магазин</title>
-    <meta name="description" content="Учебный онлайн-магазин: каталог, поиск товаров и корзина.">
+    <meta name="description" content="Учебный онлайн-магазин: каталог, управление товарами и корзина.">
     <link rel="icon"
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232c45e7'/%3E%3Cpath d='M8 24V8l16 16V8' fill='none' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="catalog.js" defer></script>
     <script src="app.js" defer></script>
 </head>
 
@@ -18,9 +19,14 @@
             NOVA<span>store</span>
         </a>
         <span class="header-note">Вещи для каждого дня</span>
-        <button id="cart-open" class="primary">
-            Корзина <span id="cart-count">0</span>
-        </button>
+        <div class="header-actions">
+            <button id="cart-open">
+                Корзина <span id="cart-count">0</span>
+            </button>
+            <button id="product-create" class="primary with-icon" disabled>
+                <span data-icon="plus"></span> Добавить
+            </button>
+        </div>
     </header>
 
     <main>
@@ -68,6 +74,8 @@
             <span id="result-count" aria-live="polite">Загрузка…</span>
         </div>
 
+        <p class="muted">DummyJSON — учебный API: изменения видны до перезагрузки страницы и не сохраняются на сервере.</p>
+
         <p id="status" role="status">Загружаем товары…</p>
         <button id="retry" hidden>Повторить загрузку</button>
 
@@ -106,6 +114,68 @@
         </button>
         <p class="muted">Оплата и доставка не выполняются.</p>
         <p id="order-message" role="status"></p>
+    </dialog>
+
+    <dialog id="product-editor" aria-labelledby="editor-title" aria-describedby="editor-note">
+        <div class="dialog-head">
+            <h2 id="editor-title">Добавить товар</h2>
+            <button type="button" class="close" data-close="product-editor" aria-label="Закрыть форму">
+                <span data-icon="x"></span>
+            </button>
+        </div>
+        <p id="editor-note" class="muted">Данные отправляются в DummyJSON. API имитирует изменения: после перезагрузки вернётся исходный каталог.</p>
+        <form id="product-form" class="product-form">
+            <label class="full-field">
+                Название
+                <input id="product-title" name="title" required maxlength="160" autofocus>
+            </label>
+            <label class="full-field">
+                Описание
+                <textarea id="product-description" name="description" rows="3" required maxlength="2000"></textarea>
+            </label>
+            <label>
+                Категория
+                <select id="product-category" name="category" required></select>
+            </label>
+            <label>
+                Бренд <span class="optional">необязательно</span>
+                <input id="product-brand" name="brand" maxlength="100">
+            </label>
+            <label>
+                Цена, USD
+                <input id="product-price" name="price" type="number" min="0" max="999999999" step="0.01" required>
+            </label>
+            <label>
+                Остаток, шт.
+                <input id="product-stock" name="stock" type="number" min="0" max="999999999" step="1" required>
+            </label>
+            <label class="full-field">
+                Ссылка на фото <span class="optional">необязательно</span>
+                <input id="product-thumbnail" name="thumbnail" type="url" placeholder="https://example.com/photo.jpg" maxlength="2048">
+            </label>
+            <p id="product-error" class="form-error full-field" role="alert" hidden></p>
+            <div class="form-actions full-field">
+                <button type="button" data-close="product-editor">Отмена</button>
+                <button id="product-save" type="submit" class="primary">Добавить товар</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="product-delete" aria-labelledby="delete-title" aria-describedby="delete-description">
+        <div class="dialog-head">
+            <h2 id="delete-title">Удалить товар?</h2>
+            <button type="button" class="close" data-close="product-delete" aria-label="Закрыть удаление">
+                <span data-icon="x"></span>
+            </button>
+        </div>
+        <p id="delete-description" class="description">Товар «<strong id="delete-product-name"></strong>» будет удалён из каталога и корзины.</p>
+        <p id="delete-error" class="form-error" role="alert" hidden></p>
+        <div class="form-actions">
+            <button type="button" data-close="product-delete" autofocus>Отмена</button>
+            <button id="product-delete-confirm" type="button" class="danger with-icon">
+                <span data-icon="trash"></span> Удалить товар
+            </button>
+        </div>
     </dialog>
 
     <div id="toast" role="status" aria-live="polite"></div>

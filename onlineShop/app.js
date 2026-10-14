@@ -45,6 +45,9 @@ const labels = {
     "skin-care": "Уход за кожей",
 };
 let products = [];
+let authors = [];
+const authorIds = new Map();
+let authorLoadError = false;
 let cart = [];
 let toastTimer;
 let editingProductId = null;
@@ -141,10 +144,12 @@ function addProduct(id) {
 
 function renderProducts() {
     const query = $("search").value.trim().toLowerCase();
+    const sellerQuery = $("seller-search").value.trim().toLowerCase();
     const category = $("category").value;
     let list = products.filter(
         (product) =>
             (!category || product.category === category) &&
+            matchesSeller(product, sellerQuery) &&
             (!query ||
                 `${product.title} ${product.description} ${labels[product.category] || product.category}`
                     .toLowerCase()
@@ -155,17 +160,31 @@ function renderProducts() {
     if (sort === "low") list.sort((a, b) => a.price - b.price);
     if (sort === "high") list.sort((a, b) => b.price - a.price);
     if (sort === "rating") list.sort((a, b) => b.rating - a.rating);
+    if (sort === "author-asc" || sort === "author-desc") {
+        const collator = new Intl.Collator("ru", { sensitivity: "base", numeric: true });
+        const direction = sort === "author-asc" ? 1 : -1;
+        list.sort((a, b) => {
+            const authorA = authorFor(a);
+            const authorB = authorFor(b);
+            // Карточки без загруженного автора всегда остаются в конце.
+            if (!authorA || !authorB) return Number(!authorA) - Number(!authorB) || a.id - b.id;
+            const nameA = `${authorA.firstName} ${authorA.lastName}`;
+            const nameB = `${authorB.firstName} ${authorB.lastName}`;
+            return direction * collator.compare(nameA, nameB) || a.id - b.id;
+        });
+    }
 
     $("result-count").textContent = `Найдено: ${list.length}`;
     $("status").textContent = list.length
         ? ""
         : products.length
-            ? "Ничего не найдено. Попробуйте другое название или категорию."
+            ? "Ничего не найдено. Проверьте название товара, продавца или категорию."
             : "Каталог пока пуст. Нажмите «Добавить», чтобы создать первый товар.";
     $("products").innerHTML = list
         .map(
             (product) => `
         <article class="card">
+          ${authorCard(product)}
           <div class="card-actions" role="group" aria-label="Управление товаром ${escapeHTML(product.title)}">
             <button type="button" class="icon-button" data-edit="${product.id}" aria-label="Редактировать товар: ${escapeHTML(product.title)}" title="Редактировать товар">${icon("pencil")}</button>
             <button type="button" class="icon-button delete-button" data-delete="${product.id}" aria-label="Удалить товар: ${escapeHTML(product.title)}" title="Удалить товар">${icon("trash")}</button>
@@ -199,7 +218,7 @@ async function loadProducts() {
     $("product-create").disabled = true;
 
     try {
-        await productStore.load();
+        await Promise.all([productStore.load(), loadAuthors()]);
         refreshCatalog();
         $("product-create").disabled = false;
     } catch (error) {
@@ -226,6 +245,12 @@ function renderCategories() {
 
 function refreshCatalog() {
     products = productStore.read();
+    // Products API не содержит userId: учебная связь стабильна в пределах страницы.
+    for (const product of products) {
+        if (authors.length && !authorIds.has(product.id)) {
+            authorIds.set(product.id, authors[(product.id - 1) % authors.length].id);
+        }
+    }
     // Редактирование цены и остатка обновляет корзину, удаление убирает товар.
     const byId = new Map(products.map((product) => [product.id, product]));
     cart = cart.flatMap((item) => {
@@ -301,6 +326,7 @@ $("product-form").addEventListener("submit", async (event) => {
         else await productStore.update(productId, values);
         // Сохранённый товар должен быть виден даже после поиска или смены категории.
         $("search").value = "";
+        $("seller-search").value = "";
         $("category").value = "";
         $("sort").value = "default";
         refreshCatalog();
@@ -347,23 +373,114 @@ document.addEventListener("error", (event) => {
     }
 }, true);
 
+async function loadAuthors() {
+    try {
+        const response = await fetch("https://dummyjson.com/users?limit=0&select=id,firstName,lastName,username,image,email,phone,age,address,company,university", {
+            signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) throw new Error("Не удалось загрузить авторов");
+        const data = await response.json();
+        if (!Array.isArray(data.users) || !data.users.length ||
+            data.users.some((user) => !Number.isSafeInteger(user.id) || user.id < 1)) {
+            throw new Error("Неверные данные пользователей");
+        }
+        authors = data.users;
+        authorLoadError = false;
+    } catch {
+        authorLoadError = true;
+    }
+}
+
+function authorFor(product) {
+    return authors.find((user) => user.id === authorIds.get(product.id));
+}
+
+function matchesSeller(product, query) {
+    if (!query) return true;
+    const user = authorFor(product);
+    if (!user) return false;
+    // ID сравниваем точно: поиск «1» не должен показывать продавца 10.
+    if (/^\d+$/.test(query)) return String(user.id) === query;
+    const name = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const username = String(user.username || "").toLowerCase();
+    return query.startsWith("@")
+        ? username.includes(query.slice(1))
+        : name.includes(query) || username.includes(query);
+}
+
+// Один шаблон используется и в каталоге, и в верхней части окна.
+function authorCard(product, expanded = false) {
+    const user = authorFor(product);
+    if (!user) return `<div class="author-unavailable">Автор недоступен · <button type="button" data-retry-authors>Повторить</button></div>`;
+    return `<button type="button" class="author-card ${expanded ? "author-card-expanded" : ""}"
+        data-detail="${product.id}" aria-label="Открыть карточку автора ${escapeHTML(user.firstName)} и товара ${escapeHTML(product.title)}">
+        <img class="author-avatar" src="${safeImage(user.image)}" alt="" loading="lazy">
+        <span class="author-copy"><strong>${escapeHTML(user.firstName)} ${escapeHTML(user.lastName)}</strong>
+        <span>@${escapeHTML(user.username)}</span><span class="author-id">Автор · ID ${user.id}</span></span>
+        <span class="author-arrow" aria-hidden="true">↗</span>
+    </button>`;
+}
+
 function showDetails(id) {
     const product = products.find((item) => item.id === id);
     if (!product) return;
-
+    const user = authorFor(product);
+    const info = (label, value) => `<div><dt>${label}</dt><dd>${escapeHTML(value ?? "Не указано")}</dd></div>`;
     $("detail-content").innerHTML = `
-    <img class="detail-img" src="${safeImage(product.thumbnail)}" alt="${escapeHTML(product.title)}">
-    <p class="eyebrow">${escapeHTML(labels[product.category] || product.category)}</p>
-    <h2>${escapeHTML(product.title)}</h2>
-    <p class="description">${escapeHTML(product.description)}</p>
-    <p>Рейтинг: ${product.rating} / 5 · Остаток: ${product.stock}</p>
-    <div class="detail-actions">
-      <strong class="price">${money(product.price)}</strong>
-      <button class="primary" data-add="${product.id}" ${product.stock < 1 ? "disabled" : ""}>В корзину</button>
-    </div>
-  `;
-    $("details").showModal();
+      <div class="detail-layout">
+        <section class="author-profile" aria-label="Информация об авторе">
+          <p class="eyebrow">АВТОР КАРТОЧКИ</p>
+          ${user ? `<img class="profile-avatar" src="${safeImage(user.image)}" alt="Аватар ${escapeHTML(user.firstName)}">
+          <h2>${escapeHTML(user.firstName)} ${escapeHTML(user.lastName)}</h2>
+          <p class="profile-handle">@${escapeHTML(user.username)} <span>ID ${user.id}</span></p>
+          <dl class="profile-info">
+            ${info("Возраст", user.age)}
+            ${info("Город", user.address?.city)}
+            ${info("Почта", user.email)}
+            ${info("Телефон", user.phone)}
+            ${info("Компания", user.company?.name)}
+            ${info("Должность", user.company?.title)}
+            ${info("Университет", user.university)}
+          </dl>` : `<h2>Автор недоступен</h2><p class="description">Не удалось получить профиль. Попробуйте загрузить его ещё раз.</p><button data-retry-authors>Повторить</button>`}
+        </section>
+        <section class="product-profile" aria-labelledby="detail-title">
+          ${authorCard(product, true)}
+          <img class="detail-img" src="${safeImage(product.thumbnail)}" alt="${escapeHTML(product.title)}">
+          <p class="eyebrow">${escapeHTML(labels[product.category] || product.category)} · ID ${product.id}</p>
+          <h2 id="detail-title">${escapeHTML(product.title)}</h2>
+          <p class="description">${escapeHTML(product.description)}</p>
+          <p>Рейтинг: ${escapeHTML(product.rating)} / 5 · Остаток: ${escapeHTML(product.stock)}</p>
+          <div class="detail-actions">
+            <strong class="price">${money(product.price)}</strong>
+            <button class="primary" data-add="${product.id}" ${product.stock < 1 ? "disabled" : ""}>В корзину</button>
+          </div>
+        </section>
+      </div>`;
+    $("details").dataset.productId = String(id);
+    if (!$("details").open) $("details").showModal();
 }
+
+let retryingAuthors = false;
+async function retryAuthors() {
+    if (retryingAuthors) return;
+    retryingAuthors = true;
+    try {
+        await loadAuthors();
+        refreshCatalog();
+        if ($("details").open) showDetails(Number($("details").dataset.productId));
+        if (authorLoadError) notify("Не удалось загрузить авторов. Попробуйте позже.");
+    } finally {
+        retryingAuthors = false;
+    }
+}
+
+// Native dialog поддерживает Escape и возвращает фокус на нажатую карточку.
+$("details").addEventListener("click", (event) => {
+    if (event.target !== $("details")) return;
+    const rect = $("details").getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right ||
+        event.clientY < rect.top || event.clientY > rect.bottom) $("details").close();
+});
 
 function renderCart() {
     $("cart-count").textContent = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -398,6 +515,7 @@ document.addEventListener("click", (event) => {
     const button = event.target.closest("button");
     if (!button) return;
 
+    if (button.hasAttribute("data-retry-authors")) retryAuthors();
     if (button.dataset.add) addProduct(Number(button.dataset.add));
     if (button.dataset.detail) showDetails(Number(button.dataset.detail));
     if (button.dataset.edit) showProductEditor(Number(button.dataset.edit));
@@ -421,8 +539,8 @@ document.addEventListener("click", (event) => {
     }
 });
 
-["search", "category", "sort"].forEach((id) =>
-    $(id).addEventListener(id === "search" ? "input" : "change", renderProducts),
+["search", "seller-search", "category", "sort"].forEach((id) =>
+    $(id).addEventListener(id.endsWith("search") ? "input" : "change", renderProducts),
 );
 
 $("retry").addEventListener("click", loadProducts);
